@@ -5,6 +5,7 @@ namespace Common.Models
 {
     public class IPDetails : IIPDetails
     {
+        public string IP { get; set; }
         public string City { get; set; }
 
         [JsonProperty(PropertyName = "country_name")]

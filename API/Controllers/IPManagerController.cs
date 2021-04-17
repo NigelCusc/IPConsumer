@@ -1,7 +1,12 @@
-﻿using API.Data;
+﻿using API.CustomExceptions;
+using API.Data;
+using API.DataMappers;
 using API.Entities;
+using API.Repositories;
+using API.Services;
 using Common.Models;
 using IPLibrary;
+using IPLibrary.CustomExceptions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -21,112 +26,97 @@ namespace API.Controllers
         private IMemoryCache memoryCache;
         private readonly DataContext context;
         private readonly IConfiguration configuration;
+        private readonly IIPManagerRepository repository;
         public IPManagerController(IMemoryCache memoryCache, DataContext context, IConfiguration configuration) // Dependency Injection
         {
             this.memoryCache = memoryCache;
             this.context = context;
             this.configuration = configuration;
+            repository = new IPManagerRepository(context);
         }
 
         [Route("/Details/{ip}")]
         [HttpGet]
-        public async Task<IPDetails> Details(string ip)
+        public async Task<ActionResult<IPDetails>> Details(string ip)
         {
-            // Request for IP details
-            IPDetails details;
-            // Attempt to retrieve from cache
-            if(!memoryCache.TryGetValue(ip, out details))
+            try
             {
-                // Attempt to retrieve from database
-                details = await GetDetailsFromDB(ip);
-                if (details == null)
+                // Attempt to retrieve from cache
+                if (!memoryCache.TryGetValue(ip, out IPDetails details))
                 {
-                    // Get from IPLibrary
-                    IPInfoProviderService service = new IPInfoProviderService(configuration);
-                    details = service.GetDetails(ip);
+                    // Attempt to retrieve from database
+                    IPManagerService managerService = new IPManagerService(repository);
+                    details = await managerService.GetByIPAsync(ip);
+                    if (details == null)
+                    {
+                        // Get from IPLibrary
+                        IPInfoProviderService providerService = new IPInfoProviderService(configuration);
+                        details = providerService.GetDetails(ip);
 
-                    // Save in our Database
+                        // Save in our Database
+                        details = await managerService.SaveAsync(details);
+                    }
 
+                    // Save in cache for one minute
+                    var cacheEntryOptions = new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromMinutes(1));
+                    memoryCache.Set(ip, details, cacheEntryOptions);
                 }
 
-                // Save in cache for one minute
-                var cacheEntryOptions = new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromMinutes(1));
-                memoryCache.Set(ip, details, cacheEntryOptions);
+                return details;
             }
-
-            return details;
+            catch (IPServiceNotAvailableException ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, 
+                    ex.Message);
+            }
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, 
+                    "Error getting IP details");
+            }
         }
 
         // Get from Database
         [Route("/GetDetailsFromDB")]
         [HttpGet]
-        public async Task<List<IPDetails>> GetDetailsFromDB()
+        public async Task<ActionResult<List<IPDetails>>> GetDetailsFromDB()
         {
-            List<IPDetails> iPDetailsList = new List<IPDetails>();
-            // From DB
-            foreach(IPDetailsEntity entity in  await context.IPDetails.ToListAsync())
+            try
             {
-                iPDetailsList.Add(new IPDetails()
-                {
-                    City = entity.City,
-                    Continent = entity.Continent,
-                    Country = entity.Country,
-                    Latitude = entity.Latitude,
-                    Longitude = entity.Longitude
-                });
+                IPManagerService managerService = new IPManagerService(repository);
+                return await managerService.ListAsync();
             }
-
-            return iPDetailsList;
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                "Error whilst getting IP details from database");
+            }
         }
 
         // Get from Database by IP
         [Route("/GetDetailsFromDB/{ip}")]
         [HttpGet]
-        public async Task<IPDetails> GetDetailsFromDB(string ip)
+        public async Task<ActionResult<IPDetails>> GetDetailsFromDB(string ip)
         {
-            List<IPDetailsEntity> iPDetailsEntitiesList = await context.IPDetails.Where(x => x.IP == ip).ToListAsync();
-            if (iPDetailsEntitiesList.Any())
+            try
             {
-                if (iPDetailsEntitiesList.Count == 1)  // Found one
-                {
-                    var entity = iPDetailsEntitiesList.First();
-                    return new IPDetails()
-                    {
-                        City = entity.City,
-                        Continent = entity.Continent,
-                        Country = entity.Country,
-                        Latitude = entity.Latitude,
-                        Longitude = entity.Longitude
-                    };
-                }
-                else    // Found multiple. Irregular behaviour as IP should be unique
-                    throw new Exception(String.Format("Duplicate detected for IP: {0}", ip));
+                IPManagerService managerService = new IPManagerService(repository);
+                return await managerService.GetByIPAsync(ip);
+            } catch(DuplicateIPAddressException exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, exception.Message);
+            } catch(Exception exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                $"Error whilst getting IP details from database. {exception.Message}");
             }
-            else
-                return null;
         }
 
-
-
-        //[Route("IPManager/Create")]
+        //[Route("/BatchUpdate")]
         //[HttpPost]
-        //public int Create(string ip)
+        //public async Task<ActionResult<int>> BatchUpdate(IPDetailsEntity[])
         //{
-        //    return 1;
-        //}
 
-        //[Route("IPManager/Edit")]
-        //[HttpPost]
-        //public int Edit(int id, IPDetails details)
-        //{
-        //    return 1;
-        //}
-
-        //[Route("IPManager/Delete")]
-        //[HttpPost]
-        //public int Delete(int id)
-        //{
-        //    return 1;
         //}
     }
 }

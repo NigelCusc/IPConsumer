@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Configuration;
 using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Mvc;
 
 namespace IPLibrary
 {
@@ -39,7 +40,6 @@ namespace IPLibrary
                 string URL = String.Format("http://api.ipstack.com/{0}?access_key={1}&format=1", ip, accessKey);
 
                 HttpClient client = new HttpClient();
-                //client.BaseAddress = new Uri(IPStackURL);
 
                 // Header
                 client.DefaultRequestHeaders.Accept.Add(
