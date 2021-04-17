@@ -11,20 +11,28 @@ using System.Net.Http.Formatting;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
+using System.Configuration;
+using Microsoft.Extensions.Configuration;
 
 namespace IPLibrary
 {
     public class IPInfoProviderService : IIPInfoProvider
     {
-        // Example http://api.ipstack.com/46.11.43.239?access_key=dde84e792ec7ffd3cb982df0c1b8cf87&format=1
-        //private const string BaseAddress = "http://api.ipstack.com/";
-        private const string accessKey = "dde84e792ec7ffd3cb982df0c1b8cf87"; // Needs to not be hardcoded. To be put in appsettings.
-        //private string urlParameters = "?access_key=" + accessKey + "&format=1";
+        private readonly IConfiguration config;
+        public IPInfoProviderService(IConfiguration config)
+        {
+            this.config = config;
+        }
 
         public IPDetails GetDetails(string ip)
         {
             try
             {
+                /* Get access key 
+                 * (IPStackAccessKeys : DefaultAccessKey in appSettings.Development)
+                 */
+                string accessKey = config.GetSection("IPStackAccessKeys").GetSection("DefaultAccessKey").Value;
+
                 IPDetails iPDetails = new();
 
                 // Example http://api.ipstack.com/46.11.43.239?access_key=dde84e792ec7ffd3cb982df0c1b8cf87&format=1

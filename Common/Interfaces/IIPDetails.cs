@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Common.Interfaces
 {
-    interface IIPDetails
+    public interface IIPDetails
     {
         string City { get; set; }
         string Country { get; set; }
