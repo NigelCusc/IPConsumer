@@ -1,16 +1,12 @@
 ﻿using API.CustomExceptions;
-using API.Data;
 using API.DataMappers;
 using API.Entities;
 using API.Models;
 using API.Repositories;
-using API.Services.Communication;
 using Common.Models;
-using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 

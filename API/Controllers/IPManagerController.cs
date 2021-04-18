@@ -1,7 +1,5 @@
 ﻿using API.CustomExceptions;
 using API.Data;
-using API.DataMappers;
-using API.Entities;
 using API.Models;
 using API.Repositories;
 using API.Services;
@@ -10,13 +8,10 @@ using IPLibrary;
 using IPLibrary.CustomExceptions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace API.Controllers
