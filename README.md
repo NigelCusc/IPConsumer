@@ -1,8 +1,9 @@
 # IPConsumer Web API
 Built with .NET Core 5.0
+
 ## Consists of: 
  - Common - Library Project holding common models.
- - IPLibrary - Library Project to consume service from IPStack.
+ - IPLibrary - Library Project to consume service from [IPStack](https://ipstack.com/).
  - API - Web API project with IPManagerController. Functionality includes:
     - [GET] Details/{ip}: Get IP Details from Memory Cache, Our Repository, or IPStack.
     - [GET] GetDetailsFromDB: Get List of IP details from Database.
@@ -10,4 +11,7 @@ Built with .NET Core 5.0
     - [POST] BatchUpdateWithProgressReport: Update IP details records in bulk. Separate thread to be created. GUID returned.
     - [GET] BatchUpdateProgress: Read task progress report by Guid.
  - API.UnitTests - Unit Test Project consisting of tests for IPManagerService.
- 
+
+
+ ## Required Steps:
+ - Update **connection string** and **IPStack access key** in appsettings.Development.json
