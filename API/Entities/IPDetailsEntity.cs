@@ -1,4 +1,5 @@
 ﻿using Common.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace API.Entities
 {

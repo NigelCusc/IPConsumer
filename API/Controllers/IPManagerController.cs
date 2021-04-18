@@ -2,6 +2,7 @@
 using API.Data;
 using API.DataMappers;
 using API.Entities;
+using API.Models;
 using API.Repositories;
 using API.Services;
 using Common.Models;
@@ -14,6 +15,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -24,17 +26,16 @@ namespace API.Controllers
     public class IPManagerController : ControllerBase
     {
         private IMemoryCache memoryCache;
-        private readonly DataContext context;
         private readonly IConfiguration configuration;
         private readonly IIPManagerRepository repository;
         public IPManagerController(IMemoryCache memoryCache, DataContext context, IConfiguration configuration) // Dependency Injection
         {
             this.memoryCache = memoryCache;
-            this.context = context;
             this.configuration = configuration;
             repository = new IPManagerRepository(context);
         }
 
+        // Get IP Details from Memory Cache, Our Repository, or IPStack
         [Route("/Details/{ip}")]
         [HttpGet]
         public async Task<ActionResult<IPDetails>> Details(string ip)
@@ -76,7 +77,7 @@ namespace API.Controllers
             }
         }
 
-        // Get from Database
+        // Get List of IP details from Database
         [Route("/GetDetailsFromDB")]
         [HttpGet]
         public async Task<ActionResult<List<IPDetails>>> GetDetailsFromDB()
@@ -93,7 +94,7 @@ namespace API.Controllers
             }
         }
 
-        // Get from Database by IP
+        // Get IP details from Database by IP
         [Route("/GetDetailsFromDB/{ip}")]
         [HttpGet]
         public async Task<ActionResult<IPDetails>> GetDetailsFromDB(string ip)
@@ -112,11 +113,42 @@ namespace API.Controllers
             }
         }
 
-        //[Route("/BatchUpdate")]
-        //[HttpPost]
-        //public async Task<ActionResult<int>> BatchUpdate(IPDetailsEntity[])
-        //{
+        // Update IP details records in bulk. Separate thread to be created. GUID returned.
+        [Route("/BatchUpdate")]
+        [HttpPost]
+        public async Task<ActionResult<Guid>> BatchUpdateWithProgressReport(IPDetails[] detailsArray)
+        {
+            Guid guid = Guid.NewGuid();
+            Progress<ProgressReportModel> progress = new Progress<ProgressReportModel>();
+            progress.ProgressChanged += ReportProgress;
 
-        //}
+            IPManagerService managerService = new IPManagerService(repository);
+            // This should run in separate thread
+            _ = Task.Run(() => managerService.UpdateBulk(guid, detailsArray, progress));
+
+            return guid;
+        }
+
+        // Private method used to update task progress report
+        private void ReportProgress(object sender, ProgressReportModel report)
+        {
+            // Save in cache for one minute
+            var cacheEntryOptions = new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromMinutes(1));
+            memoryCache.Set(report.Guid, report, cacheEntryOptions);
+        }
+
+        // Read task progress report by Guid
+        [Route("/BatchUpdateProgress/{guid}")]
+        [HttpGet]
+        public ActionResult<string> BatchUpdateProgress(Guid guid)
+        {
+            // Get from cache
+            memoryCache.TryGetValue(guid, out ProgressReportModel report);
+            if(report != null)
+                return $"Percentage completion: {report.PercentageComplete}%";
+            else
+                return StatusCode(StatusCodes.Status404NotFound,
+                    "Batch process not found");
+        }
     }
 }

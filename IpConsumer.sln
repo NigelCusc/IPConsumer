@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IPLibrary", "IPLibrary\IPLi
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Common", "Common\Common.csproj", "{00383923-D973-4DF1-B0AE-2759600ED6A6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "API.UnitTests", "API.UnitTests\API.UnitTests.csproj", "{D4E35DCA-190B-4015-9EB1-79B40421C71F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{00383923-D973-4DF1-B0AE-2759600ED6A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{00383923-D973-4DF1-B0AE-2759600ED6A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{00383923-D973-4DF1-B0AE-2759600ED6A6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D4E35DCA-190B-4015-9EB1-79B40421C71F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D4E35DCA-190B-4015-9EB1-79B40421C71F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D4E35DCA-190B-4015-9EB1-79B40421C71F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D4E35DCA-190B-4015-9EB1-79B40421C71F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -18,22 +18,25 @@ namespace API.Repositories
             this.context = context;
         }
 
-        // Get by ID
+        // Get IP details by ID
         public async Task<IPDetailsEntity> FindByIdAsync(int id)
         {
             return await context.IPDetails.FindAsync(id);
         }
 
+        // Get IP details by IP
         public async Task<List<IPDetailsEntity>> FindByIPAsync(string ip)
         {
             return await context.IPDetails.Where(x => x.IP == ip).ToListAsync();
         }
 
+        // Return list of all IP details in database
         public async Task<List<IPDetailsEntity>> ListAsync()
         {
             return await context.IPDetails.ToListAsync();
         }
 
+        // Add new IP details in database
         public async Task<IPDetailsEntity> AddAsync(IPDetailsEntity detailsEntity)
         {
             await context.AddAsync(detailsEntity);
@@ -43,11 +46,14 @@ namespace API.Repositories
             return detailsEntity;
         }
 
-        public void UpdateAsync(IPDetailsEntity detailsEntity)
+        // Update an IP details record in the database. Using IP as identifier
+        public IPDetailsEntity UpdateAsync(IPDetailsEntity detailsEntity)
         {
             context.IPDetails.Update(detailsEntity);
 
             context.SaveChanges();
+
+            return detailsEntity;
         }
     }
 }

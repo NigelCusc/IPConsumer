@@ -2,6 +2,7 @@
 using API.Data;
 using API.DataMappers;
 using API.Entities;
+using API.Models;
 using API.Repositories;
 using API.Services.Communication;
 using Common.Models;
@@ -9,6 +10,8 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace API.Services
@@ -22,6 +25,7 @@ namespace API.Services
             this.repository = repository;
         }
 
+        // Return list of all IP details in database
         public async Task<List<IPDetails>> ListAsync()
         {
             List<IPDetails> iPDetailsList = new();
@@ -32,6 +36,7 @@ namespace API.Services
             return iPDetailsList;
         }
 
+        // Get IP details by IP
         public async Task<IPDetails> GetByIPAsync(string ip)
         {
             List<IPDetailsEntity> iPDetailsEntitiesList = await repository.FindByIPAsync(ip);
@@ -43,9 +48,10 @@ namespace API.Services
                     throw new DuplicateIPAddressException(String.Format("Duplicate detected for IP: {0}", ip));
             }
             else
-                throw new Exception("IP doesn't exist within the database");
+                return null;
         }
 
+        // Add new IP details in database
         public async Task<IPDetails> SaveAsync(IPDetails details)
         {
             List<IPDetailsEntity> existingIPDetails = await repository.FindByIPAsync(details.IP);
@@ -57,15 +63,24 @@ namespace API.Services
             return details;
         }
 
+        // Update an IP details record in the database. Using IP as identifier
         public async Task<IPDetails> UpdateAsync(IPDetails details)
         {
+            IPDetailsEntity entity;
             List<IPDetailsEntity> iPDetailsEntitiesList = await repository.FindByIPAsync(details.IP);
             if (iPDetailsEntitiesList.Any())
             {
                 // Found one
                 if (iPDetailsEntitiesList.Count == 1)
                 {
-                    repository.UpdateAsync(IPDetailsMapper.ToEntity(details));
+                    entity = iPDetailsEntitiesList.First();
+                    entity.City = details.City;
+                    entity.Continent = details.Continent;
+                    entity.Country = details.Country;
+                    entity.Latitude = details.Latitude;
+                    entity.Longitude = details.Longitude;
+
+                    repository.UpdateAsync(entity);
 
                     return details;
                 }
@@ -74,6 +89,33 @@ namespace API.Services
             }
             else
                 throw new Exception($"IP details are missing for IP: {details.IP}");
+        }
+
+        // Update IP details records in bulk in the database. Using IP as identifier
+        public void UpdateBulk(Guid guid, IPDetails[] detailsArray, IProgress<ProgressReportModel> progress, int batchSize = 10)
+        {
+            // Parallel requests, but not all at the same time. Let’s do it batches for 10
+            List<IPDetails> completed = new List<IPDetails>();
+            int numberOfBatches = (int)Math.Ceiling((double)detailsArray.Length / batchSize);
+            ProgressReportModel report = new ProgressReportModel()
+            {
+                Guid = guid
+            };
+
+            for (int i = 1; i <= numberOfBatches; i++)
+            {
+                var currentBatch = detailsArray.Skip(i * batchSize).Take(batchSize);
+                var tasks = currentBatch.Select(x => UpdateAsync(x));
+                Task.WhenAll(tasks);
+                completed.AddRange(currentBatch.ToList());
+
+                report.IPDetailsCompleted = completed;
+                report.PercentageComplete = (i * 100) / numberOfBatches;
+                progress.Report(report);
+
+                // Used for testing purposes
+                Thread.Sleep(30000); // Add 30 seconds to batch processing time
+            }
         }
     }
 }

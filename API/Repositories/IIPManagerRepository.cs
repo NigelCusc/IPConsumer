@@ -12,6 +12,6 @@ namespace API.Repositories
         Task<IPDetailsEntity> FindByIdAsync(int id);
         Task<List<IPDetailsEntity>> FindByIPAsync(string ip);
         Task<IPDetailsEntity> AddAsync(IPDetailsEntity detailsEntity);
-        void UpdateAsync(IPDetailsEntity detailsEntity);
+        IPDetailsEntity UpdateAsync(IPDetailsEntity detailsEntity);
     }
 }
